@@ -4,9 +4,11 @@ import (
 	"archive/zip"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type Archiver interface {
+	DestFmt() string
 	Archive(src, dest string) error
 }
 
@@ -16,7 +18,7 @@ type zipper struct{}
 var ZIP Archiver = (*zipper)(nil)
 
 func (z *zipper) Archive(src, dest string) error {
-	if err := os.MkdirAll(filePath.Dir(dest), 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dest), 0777); err != nil {
 		return err
 	}
 	out, err := os.Create(dest)
@@ -28,7 +30,7 @@ func (z *zipper) Archive(src, dest string) error {
 	w := zip.NewWriter(out)
 	defer w.Close()
 
-	return filePath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			// skip
 			return nil
@@ -51,4 +53,8 @@ func (z *zipper) Archive(src, dest string) error {
 		// not error.
 		return nil
 	})
+}
+
+func (z *zipper) DestFmt() string {
+	return "%d.zip"
 }
